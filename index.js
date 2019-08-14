@@ -10,18 +10,32 @@ const { loginRequired, ensureCorrectUser } = require("./middleware/auth");
 const db = require("./models");
 const PORT = process.env.PORT || 8081;
 
-if (process.env.NODE_ENV === 'production') {
-  // Set static folder
-  app.use(express.static(path.join(__dirname, '../../client/build/')));
-
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../client/build/index.html'));
+if (process.env.NODE_ENV === "production") {
+  /*
+   * Redirect user to https if requested on http
+   *
+   * Refer this for explaination:
+   * https://www.tonyerwin.com/2014/09/redirecting-http-to-https-with-nodejs.html
+   */
+  app.enable("trust proxy");
+  app.use((req, res, next) => {
+    if (req.secure) {
+      // request was via https, so do no special handling
+      next();
+    } else {
+      // request was via http, so redirect to https
+      res.redirect(`https://${req.headers.host}${req.url}`);
+    }
   });
 }
+
 app.use(cors());
 app.use(function(req, res, next) {
-  res.header("Access-Control-Allow-Origin", "https://digittweet-client.herokuapp.com/"); // update to match the domain you will make the request from
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
   next();
 });
 
